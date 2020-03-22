@@ -13,10 +13,10 @@ class TrafficLightSimulator implements Runnable {
     private boolean changed = false;  // true when the light has changed
 
     TrafficLightSimulator(TrafficLightColor init) { tlc = init; }
-    TrafficLightSimulator() { tlc = TrafficLightColor.RED; }
 
     // Start up the light.
     public void run() {
+      System.out.println(" (" + Thread.currentThread().getName() + ")  in run()");
         while(!stop) {
             try {
                 switch (tlc) {
@@ -37,6 +37,7 @@ class TrafficLightSimulator implements Runnable {
 
     // Change color.
     synchronized void changeColor() {
+      System.out.println(" (" + Thread.currentThread().getName() + ")  in changeColor()");
         switch (tlc) {
             case RED:
                 tlc = TrafficLightColor.GREEN;
@@ -49,31 +50,38 @@ class TrafficLightSimulator implements Runnable {
         }
         changed = true;
         notify();  // signal that the light has changed
+        System.out.println(" (" + Thread.currentThread().getName() + ")  after notify() - changed is " + changed);
     }
 
     // Wait until a light change occurs.
-    synchronized void waitForChange() {
+    synchronized void waitForChange() {  // main thread here
+      System.out.println(" (" + Thread.currentThread().getName() + ")  in waitForChange()");
         try {
             while(!changed) wait();  // wait for light to change
             changed = false;
+            System.out.println(" (" + Thread.currentThread().getName() + ")  after wait() - changed is " + changed);
         } catch (InterruptedException exc) { System.out.println(exc); }
     }
 
     // Return current color.
-    synchronized TrafficLightColor getColor() { return tlc; }
+    synchronized TrafficLightColor getColor() {
+      System.out.println(" (" + Thread.currentThread().getName() + ")  in getColor()");
+      return tlc; }
 
     // Stop the traffic light.
-    synchronized void cancel() { stop = true; }
+    synchronized void cancel() {
+      System.out.println(" (" + Thread.currentThread().getName() + ")  in cancel()");
+      stop = true;
+    }
 }
 
 class TrafficLightDemo {
     public static void main(String[] args) {
 	TrafficLightSimulator t1 = new TrafficLightSimulator(TrafficLightColor.GREEN);
-	Thread thrd = new Thread(t1);
-	thrd.start();
+	new Thread(t1).start();
 
 	for(int i=0; i<9; i++) {
-        System.out.println(t1.getColor());
+        System.out.println((i+1) + ") " + t1.getColor());
         t1.waitForChange();
 	}
 	t1.cancel();
